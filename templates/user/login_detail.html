@@ -1,0 +1,751 @@
+<!DOCTYPE html>
+<html lang="en">
+{% load static %}
+<head>
+    <meta charset="UTF-8">
+    <title>
+        DKB INTERFACE
+    </title>
+    <link rel="stylesheet" href="https://at.alicdn.com/t/font_2669321_0wrc188vhioq.css">
+    <link rel="stylesheet" type="text/css" href="/static/css/home.css"/>
+    <script src="https://cdn.bootcdn.net/ajax/libs/echarts/5.1.2/echarts.min.js"></script>
+{#    <script src="/static/js/echarts.min.js"></script>#}
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js" type="text/javascript"></script>
+</head>
+<body>
+    <div id="container">
+        <div id="main"></div>
+    </div>
+    <!-- navigation bar -->
+    <div id="navigator" class="navigator">
+        <input type="checkbox" id="check">
+        <label for="check" id="checklabel">
+            <i class="iconfont">&#xe601;</i>
+        </label>
+        <input type="button" id="home_box">
+        <label for="home_box" id="home_label">
+            <i class="iconfont">&#xe674;</i>
+        </label>
+        <div id="search_box" class="search_box">
+            <div id="search_form">
+                context: <input type="text" name="search_context" id="search_context"/>
+                concept: <input type="text" name="search_concept" id="search_concept"/>
+                instance: <input type="text" name="search_instance" id="search_instance"/>
+                <button id="search_button" type="button">search</button>
+{#                <input type="button" id="search_button" value="search">{% csrf_token %} #}
+            </div>
+        </div>
+        <div id="star_box" class="star_box">
+            <div id="star_form" class="star_form">
+                state_name: <input type="text" name="save_name" id="save_name"/>
+                <input type="button" id="star_button" value="star"/>{% csrf_token %}
+            </div>
+        </div>
+        <div id="hide_box" class="hide_box">
+            <div id="hide_form" class="hide_form">
+                <select id="hide_nodes" name="hide_nodes">
+                    <option value="-1" selected="selected">hide_nodes</option>
+                </select>
+                <button id="hide_button" type="button">show</button>
+            </div>
+        </div>
+        <div id="navi_box" class="navi_box">
+            <div id="header">
+                <h3>DKB Home</h3>
+            </div>
+            <div id="userName" class="navi-item">
+                <a href="#"><span>11111</span></a>
+            </div>
+            <div id="logOut" class="navi-item">
+                <a href="{% url 'logout_user' %}"><span>LogOut</span></a>
+            </div>
+            <div id="savedState" class="navi-item">
+                <a href="#"><span>savedStates</span></a>
+                <ul id="saved_state" class="navi-minor-box">
+                </ul>
+            </div>
+        </div>
+    </div>
+    <!--context menu-->
+    <div id="right-box" class="right-box">
+        <div id="hide" class="right-item">
+            <p class="title">hide</p>
+        </div>
+        <div id="expand" class="right-item">
+            <p class="title">expand</p>
+        </div>
+        <div id="collapse" class="right-item">
+            <p class="title">collapse</p>
+        </div>
+        <div id="mark" class="right-item">
+            <p class="title">mark</p>
+            <ul class="right-minor-box">
+                <li id="mark_none">none</li>
+                <li id="mark_red">red</li>
+                <li id="mark_yellow">yellow</li>
+                <li id="mark_green">green</li>
+            </ul>
+        </div>
+    </div>
+
+    <script type="text/javascript">
+
+        var colors = {"none":"#D2E9FF", "red":"#ff7575",
+                      "yellow":"#FFED97", "green":"#D3FF93"};
+        var hide_name = []; //{'id':id,'name':name}
+        var state_name = {{ state_name|safe }};
+        var userName = {{ userName|safe }};
+        var data = {{ data|safe }};
+        var link = {{ link|safe }};
+        var line_label = {"dashed":"search_path", "solid":"instance_of", "dotted":"specialise"};
+        var myChart = echarts.init(document.getElementById('main'));
+        console.log(data);
+        console.log(link);
+        var categories = [{name:"context", symbol:'roundRect'}, {name:"concept", symbol:'rect'},
+                          {name:"instance", symbol:'circle'}, {name:'attribute', symbol:'triangle'}];
+        var data_tmp;
+        option = {
+            title: {
+                text: 'ECharts of the DKB'
+            },
+            tooltip: {
+                formatter: function (x) {
+                    return x.data.des;
+                }
+             },
+            toolbox: {
+                show: true,
+                feature: {
+                    mark: {
+                        show: true
+                    },
+                    restore: {
+                        show: true
+                    },
+                    saveAsImage: {
+                        show: true
+                    }
+                }
+            },
+            legend: [{
+                show: true,
+                data:[{
+                    name: 'context',
+                    icon: 'roundRect',
+                    itemStyle: {
+                        color: '#D2E9FF'
+                    }
+                },{
+                    name: 'concept',
+                    icon: 'rect',
+                    itemStyle: {
+                        color: '#D2E9FF'
+                    }
+                },{
+                    name: 'instance',
+                    icon: 'circle',
+                    itemStyle: {
+                        color: '#D2E9FF'
+                    }
+                },{
+                    name: 'attribute',
+                    icon: 'triangle',
+                    itemStyle: {
+                        color: '#D2E9FF'
+                    }
+                }]
+
+            }],
+            series: [{
+                type: 'graph',
+                layout: 'force',
+                roam: true,
+                edgeSymbol: ['circle', 'arrow'],
+                edgeSymbolSize: [2, 10],
+                force: {
+                    repulsion: 500,
+                    edgeLength: [70, 100]
+                },
+                draggable: true,
+                lineStyle: {
+                    width: 2,
+                    color: '#4b565b',
+                },
+                label: {
+                    show: true,
+                    position:'inside'
+                },
+                categories: [{
+                    name: 'context',
+                    symbol: 'diamond'
+                }, {
+                    name: 'concept',
+                    symbol: 'rect'
+                }, {
+                    name: 'instance',
+                    symbol: 'circle'
+                }, {
+                    name: 'attribute',
+                    symbol: 'triangle'
+                }],
+                nodes: data.map(function (node) {
+                    return {
+                        id: node.id,
+                        name: node.name,
+                        des: node.des,
+                        category: node.category,
+                        symbolSize: node.symbolSize,
+                        store: node.store,
+                        context: node.context,
+                        info: node.info,
+                        search_path: node.search_path,
+                        attributes: node.attributes,
+                        itemStyle: {
+                            color: node.itemStyle.color
+                        }
+                    };
+                }),
+                links: link.map(function(line){
+                    return{
+                        target: line.target,
+                        source: line.source,
+                        des: line_label[line.lineStyle.type],
+                        lineStyle:{
+                            type: line.lineStyle.type
+                        },
+                    }
+                }),
+            }]
+        };
+        /**
+         * the menu of the hidden nodes, when clicking, get the list
+         */
+        function set_hide(){
+            if($("#hide_nodes").children("option").length>1){
+                $("#hide_nodes option").remove();
+                $("#hide_nodes").append("<option value='-1' selected='selected'>hide_nodes</option>");
+            }
+            for(var i=0;i<hide_name.length;i++){
+                var name = hide_name[i].name;
+                var option = "<option value='" + i + "'>" + name + "</option>";
+                $("#hide_nodes").append(option);
+            };
+        }
+        // to show a hidden node
+        $("#hide_button").click(function(){
+            var node_name = $("#hide_box").find("option:selected").text();
+            var node_val = $("#hide_box").find("option:selected").val();
+            if(node_val > -1){
+                showNode(hide_name[node_val].id);
+             }
+        });
+
+        /**
+         * save a state
+         */
+        $("#star_button").click(function(){
+            var save_name1 = $("#save_name").val();
+            if(save_name1 === ""){
+                alert("Please input something");
+                return;
+            }
+            for(var i=0;i<state_name.length;i++){
+                if(state_name[i].state === save_name1){
+                    alert("the name exists");
+                    return;
+                }
+            }
+            console.log(myChart.getOption().series[0].nodes);
+            $.ajax({
+                type: "post",
+                url:"/user/save_state/",
+                'Content-Type':'application/json',
+                headers:{'X-CSRFToken': $('input[name=csrfmiddlewaretoken]').val()},
+                data: JSON.stringify({
+                    'username': userName,
+                    'state': save_name1,
+                    'page': 'home',
+                    'data': myChart.getOption().series[0].nodes,
+                    'link': myChart.getOption().series[0].links
+                }),
+                success: function(res){
+                    if(res.code >  0) {
+                        state_name = res.state_name;
+                        alert("the state is saved successfully");
+                        fresh_states([{'state':save_name1, 'page':'context'}]);
+                    }
+            	    else{
+            	        alert("fail to save the state");
+                    }
+                }
+            });
+        })
+
+        /**
+         *  home button
+         */
+        $("#home_box").click(function(){
+            window.location.href="/user/gohome?user_name="+userName;
+        })
+
+        /**
+         * the search function
+         */
+        $("#search_button").click(function(){
+            var nodes = data;
+            var search_context = [];
+            var search_instance = [];
+            var search_concept = [];
+            var context_name = $("#search_context").val();
+            var concept_name = $("#search_concept").val();
+            var instance_name = $("#search_instance").val();
+            if(instance_name!==""){
+                console.log("instance_name:"+instance_name);
+                var [instances1, contexts1] = findNodesByName(instance_name, nodes, 2);
+                console.log(instances1);
+                if(concept_name!=="" && context_name!==""){
+                    for(var i=0;i<instances1.length;i++){
+                        if(contexts1[i].split(":")[1]===context_name && contexts1[i].split(":")[3]===concept_name){
+                            search_instance.push({"instance":instances1[i],"concept":contexts1[i]});
+                        }
+                    }
+                    if(search_instance.length === 0){
+                        alert("they are not in the same context");
+                        return;
+                    }
+                }else if(concept_name==="" && context_name===""){
+                    for(var i=0;i<instances1.length;i++){
+                        search_instance.push({"instance":instances1[i],"concept":contexts1[i]});
+                    }
+                    if(search_instance.length === 0){
+                        alert("this instance not exist");
+                        return;
+                    }
+                }else if(context_name!==""){
+                    for(var i=0;i<instances1.length;i++){
+                        if(contexts1[i].split(":")[1]===context_name){
+                            search_instance.push({"instance":instances1[i],"concept":contexts1[i]});
+                        }
+                    }
+                    if(search_instance.length === 0){
+                        alert("they are not in the same context");
+                        return;
+                    }
+                }else{
+                    for(var i=0;i<instances1.length;i++){
+                        if(contexts1[i].split(":")[3]===concept_name){
+                            search_instance.push({"instance":instances1[i],"concept":contexts1[i]});
+                        }
+                    }
+                    if(search_instance.length === 0){
+                        alert("they are not in the same context");
+                        return;
+                    }
+                }
+            }else if(concept_name!==""){
+                var [concepts2, contexts2] = findNodesByName(concept_name, nodes, 1);
+                if(context_name!==""){
+                    for(var i=0;i<concepts2.length;i++){
+                        if(contexts2[i]===context_name){
+                            search_concept.push(concepts2[i]);
+                        }
+                    }
+                    if(search_concept.length === 0){
+                        alert("they are not in the same context");
+                        return;
+                    }
+                }else{
+                    if(concepts2.length===0){
+                        alert("the concept not exist");
+                        return;
+                    }else{
+                        search_concept = concepts2;
+                    }
+                }
+            }else if(context_name!==""){
+                var context3 = findNodeById(context_name,nodes);
+                if(context3 === null){
+                    alert("this context not exist");
+                    return;
+                }
+                else{
+                    search_context.push(context_name);
+                }
+            }else{
+                alert("Please input something");
+            }
+            for(var i=0; i<search_context.length; i++){
+                dyeNode(search_context[i],"#61649F");
+            }
+            for(var i=0; i<search_concept.length; i++){
+                dyeNode(search_concept[i], "#61649F");
+            }
+            for(var i=0; i<search_instance.length; i++){
+                dyeNode(search_instance[i].instance, "#61649F");
+            }
+
+            {#if(search_instance.length===0 && search_concept.length===0 && search_context.length===0){#}
+            {#    return;#}
+            {# }#}
+            {#$.ajax({#}
+            {#    type: "post",#}
+            {#    url:"/user/search/",#}
+            {#    'Content-Type':'application/json',#}
+            {#    headers:{'X-CSRFToken': $('input[name=csrfmiddlewaretoken]').val()},#}
+            {#    data: JSON.stringify({#}
+            {#        'search_context': search_context,#}
+            {#        'search_concept': search_concept,#}
+            {#        'search_instance': search_instance,#}
+                    {#csrfmiddlewaretoken: '{{ csrf_token }}'#}
+            {#    }),#}
+			{#    success: function(res){ //data是形参 代表返回数据#}
+            {#        if(res.code >  0) {#}
+            {#            data = res.data;#}
+            {#            link = res.link;#}
+            {#            var current_data = [];#}
+            {#            for(var i=0;i<data.length;i++){#}
+            {#                current_data.push({'id': data[i].id, 'name': data[i].name, 'des': data[i].des,#}
+            {#                                   'category': data[i].category, 'symbolSize':data[i].symbolSize,#}
+            {#                                   'store': data[i].store, 'context': data[i].context,#}
+            {#                                   'itemStyle': {'color': data[i].color}});#}
+            {#            }#}
+            {#            var option = myChart.getOption();#}
+            {#            option.series[0].nodes = current_data;#}
+            {#            option.series[0].link = link;#}
+            {#            myChart.setOption(option, notMerge = true);#}
+            {#            console.log(myChart.getOption());#}
+            {#        }#}
+			{#	    else{#}
+			{#	        console.log("nothing return !");#}
+            {#        }#}
+			{#    }#}
+		    {# });#}
+        })
+
+
+        $("#userName span").html(userName);
+
+        $("#saved_state li").remove();
+        fresh_states(state_name);
+        bind_click();
+
+        function fresh_states(state_name1) {
+            console.log(state_name1)
+            for (var i = 0; i < state_name1.length; i++) {
+                var statei = state_name1[i].state;
+                var pagei = state_name1[i].page;
+                var id1 = "state_" + statei;
+                var content = "<li id='" + id1 + "' class='navi-minor-item'><a href='#'><span>" + statei + "</span>" +
+                    "<i class='iconfont' id='i_" + statei + "'>&#xe603;</i></a></li>";
+                $("#saved_state").append(content);
+            }
+        }
+        function find_state(state) {
+            for(var i=0;i<state_name.length;i++) {
+                if(state_name[i].state == state) {
+                    return state_name[i];
+                }
+            }
+            return null;
+        }
+        function bind_click() {
+            $("#saved_state span").each(function(index,element) {
+                var text = $(this).text();
+                var state_d = find_state(text);
+                console.log("text:"+text);
+                console.log(state_name);
+                if(state_d){
+                    $(this).click(function(){
+                        window.location.href="/user/go_state?username="+userName +
+                        "&state="+ state_d.state +"&page=" + state_d.page;
+                    })
+                }
+            })
+            $("#saved_state i").each(function(index, element){
+                var id = $(this).attr("id");
+                var state = id.slice(2);
+                $(this).click(function(){
+                    $.ajax({
+                        type: "get",
+                        url:"/user/del_state/",
+                        data: {
+                            'username': userName,
+                            'state': state,
+                        },
+                        success: function(res){
+                            if(res.code >  0) {
+                                state_name = res.state_name;
+                                $("#state_"+state).remove();
+                                alert("the state has been deleted successfully");
+                            }
+                            else{
+                                console.log("nothing return !");
+                            }
+                        }
+                    });
+                })
+            })
+        }
+        /**
+         * navigation bar
+         */
+        $("#check").click(function(){
+			if($("#check").is(':checked')){
+				$("#main").css({
+					'margin-left': 0
+				});
+			}else{
+			    $("#main").css({
+					'margin-left': '150px'
+				});
+            }
+		});
+        /**
+		 * clicking the canvas and hide the contextmenu
+		 */
+		$("#main").bind("contextmenu", function () { return false; });// forbid default context menu
+
+        myChart.on("click", function(params){
+            data_tmp = params.data;
+            console.log(data_tmp)
+            // enter the context page
+            if(data_tmp.category == 0){
+                window.location.href="/user/context?context_name="+data_tmp.id;
+            }
+            if(data_tmp.category === 1){
+                window.location.href="/user/concept?concept_name="+data_tmp.id+"&context_name="+data_tmp.context;
+            }
+
+        });
+
+        myChart.on("contextmenu", function(params){
+            data_tmp = params.data;
+            if($("#check").is(':checked')){
+				$('#right-box').css({
+                    'display': 'block',
+                    'left': params.event.offsetX + 15,
+                    'top' : params.event.offsetY + 15
+                });
+			}else{
+			    $('#right-box').css({
+                    'display': 'block',
+                    'left': params.event.offsetX + 165,
+                    'top' : params.event.offsetY + 55
+                });
+            }
+
+            $("#main>div:nth-child(2)").hide();
+	    });
+        /**
+         * hide the context menu when clicking in the canvas
+         */
+        $('#main').click(function(){
+            hideMenu();
+         });
+
+        $("#hide").click(function(){
+			    console.log('hide_params:',data_tmp)
+				hide(data_tmp);
+				hideMenu();
+        });
+
+        $("#expand").click( function(){
+            console.log('expand_params:',data_tmp)
+            expand(data_tmp);
+            hideMenu();
+        });
+
+        $("#collapse").click(function(){
+            console.log('collapse_params:',data_tmp)
+            collapse(data_tmp);
+            hideMenu();
+        });
+
+        $("#mark_none").click(function(){
+            mark_color(data_tmp, colors.none);
+            hideMenu();
+        });
+
+        $("#mark_red").click(function(){
+            mark_color(data_tmp, colors.red);
+            hideMenu();
+        });
+
+        $("#mark_yellow").click(function(){
+            mark_color(data_tmp, colors.yellow);
+            hideMenu();
+        });
+
+        $("#mark_green").click(function(){
+            mark_color(data_tmp, colors.green);
+            hideMenu();
+        });
+
+        function mark_color(root, color){
+            var option = myChart.getOption();
+            var nodes = data;
+            var links = link;
+
+            var mark = [root];
+            while(mark.length > 0){
+            	var current = mark.pop();
+                dyeNode(current.id, color);
+            	for(var i=0; i<links.length; i++){
+            		if(links[i].source === current.id){
+            			targetNode = findNodeById(links[i].target, nodes);
+            			if(targetNode.store > current.store){
+            				mark.push(targetNode);
+            			}
+            		}
+            	}
+            }
+        }
+
+        function dyeNode(id, color){
+            var option = myChart.getOption();
+		    for(var i=0, len=option.series[0].nodes.length; i<len; i++){
+			    //console.log(option.series[0].nodes[i].name + ":" + name);
+			    if(id === option.series[0].nodes[i].id){
+			        option.series[0].nodes[i].itemStyle.color = color;
+                }
+            }
+            myChart.clear();
+		    myChart.setOption(option);
+        }
+
+        function hideMenu(){
+            $('#right-box').css({
+                'display': 'none',
+                'left': '-9999px',
+                'top': '-9999px'
+            });
+        }
+
+		function hide(root){
+			var option = myChart.getOption();
+            var nodes = data;
+            var links = link;
+
+            var mark = [root];
+            while(mark.length > 0){
+            	var current = mark.pop();
+                hideNode(current.id);
+            	for(var i=0; i<links.length; i++){
+            		if(links[i].source === current.id){
+            			var targetNode = findNodeById(links[i].target, nodes);
+            			if(targetNode.store > current.store){
+            				mark.push(targetNode);
+            			}
+            		}
+            	}
+            }
+		}
+
+		function findNodeById(id, nodes){
+            for(var i=0; i<nodes.length; i++){
+                if(nodes[i].id === id){
+                    return nodes[i];
+                }
+            }
+            return null;
+        }
+
+        function findNodesByName(name, nodes, store){
+            var targets = []
+            var contexts = []
+            for(var i=0; i<nodes.length; i++){
+                if(nodes[i].name === name && nodes[i].store===store){
+                    targets.push(nodes[i].id);
+                    contexts.push(nodes[i].context);
+                }
+            }
+            return [targets, contexts];
+        }
+
+        function hideNode(id){
+		    var option = myChart.getOption();
+		    for(var i=0, len=option.series[0].nodes.length; i<len; i++){
+			    //console.log(option.series[0].nodes[i].name + ":" + name);
+			    if(id === option.series[0].nodes[i].id){
+			        option.series[0].nodes[i].category = -1;
+			        if(option.series[0].nodes[i].store < 3){
+			            hide_name.push({'id':id, 'name': option.series[0].nodes[i].name});
+                    }
+			        set_hide();
+                }
+            }
+		    myChart.clear();
+		    myChart.setOption(option);
+        }
+
+        function showNode(id){
+		    var option = myChart.getOption();
+		    console.log(option.series[0].nodes[i]);
+		    for(var i=0, len=option.series[0].nodes.length; i<len; i++){
+			    //console.log(option.series[0].nodes[i].name + ":" + name);
+			    if(id === option.series[0].nodes[i].id){
+			        option.series[0].nodes[i].category = option.series[0].nodes[i].store;
+			        for(var idx=0; idx<hide_name.length; idx++){
+			            if(hide_name[idx].id === id){
+			                hide_name.splice(idx,1);
+			                break;
+                        }
+                    }
+			        set_hide();
+                }
+            }
+            myChart.clear();
+		    myChart.setOption(option);
+        }
+
+		function collapse(root) {
+            console.log(root)
+            var option = myChart.getOption();
+            var nodes = data;
+            var links = link;
+
+            var mark = [root];
+            while(mark.length > 0){
+            	var current = mark.pop();
+            	if(current.id !== root.id){
+            	    console.log(current.id)
+            	    hideNode(current.id);
+                }
+            	for(var i=0; i<links.length; i++){
+            		if(links[i].source === current.id){
+            		    console.log("target:"+links[i].target)
+            			targetNode = findNodeById(links[i].target, nodes);
+            			console.log(targetNode)
+            			if(targetNode.store > current.store){
+            				mark.push(targetNode);
+            				//console.log(mark);
+            			}
+            		}
+            	}
+            }
+        }
+
+        function expand(root) {
+            var nodes = data;
+            var links = link;
+           // var root = params.data;
+
+            //console.log(params);
+
+            for(var i=0; i<links.length; i++){
+                if(links[i].source == root.id){
+                    console.log("expand:source="+links[i].source+" root="+root.id);
+                    targetNode = findNodeById(links[i].target, nodes);
+                    console.log("targetNode.store:"+targetNode.store+"root.store:"+root.store);
+                    if(targetNode.store > root.store){
+                        showNode(targetNode.id);
+                    }
+                }
+            }
+        }
+
+        myChart.setOption(option);
+        console.log(myChart.getOption());
+    </script>
+</body>
+</html>

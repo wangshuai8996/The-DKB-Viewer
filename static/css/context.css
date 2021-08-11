@@ -1,0 +1,233 @@
+*{
+    margin:0;
+    padding: 0;
+    box-sizing: border-box;
+}
+.navigator{
+    position: absolute;
+    width:100%;
+    height: 40px;
+    background-color: #0A5275;
+    box-shadow: #666666;
+}
+
+#container {
+    position: absolute;
+    background-color: #FFFFFF;
+    /* background-size: cover; */
+    margin-top: 40px;
+    height: 649px;
+    width: 100%;
+}
+
+#main {
+    background-color: #FFFFFF;
+    margin-top: 0;
+    margin-left: 150px;
+    margin-right: 0;
+    background-size: cover;
+    height:100%;
+}
+
+.navigator #check, .navigator #infobox, .navigator #home_box{
+    display: none;
+}
+
+.navigator #checklabel{
+    position: absolute;
+    top: 10px;
+    left: 150px;
+    color: #666666;
+    padding-left: 20px;
+    cursor: pointer;
+    transition: all .5s;
+}
+
+.navigator #infolabel{
+    position: absolute;
+    top: 10px;
+    right: 40px;
+    color: #666666;
+    padding-left: 20px;
+    cursor: pointer;
+    transition: all .5s;
+}
+
+.navigator #home_label{
+    position: absolute;
+    top: 10px;
+    right: 10px;
+    color: #666666;
+    padding-left: 20px;
+    cursor: pointer;
+    transition: all .5s;
+}
+
+.navigator #hide_box{
+    position: absolute;
+    top: 10px;
+    left: 180px;
+    color: #666666;
+    padding-left: 20px;
+    cursor: pointer;
+    transition: all .5s;
+}
+
+#hide_box #hide_form{
+    color: #FFFFFF;
+}
+
+.navigator #star_box{
+    position: absolute;
+    top: 10px;
+    right: 70px;
+    color: #666666;
+    padding-left: 20px;
+    cursor: pointer;
+    transition: all .5s;
+}
+
+#star_box #star_form{
+    color: #FFFFFF;
+}
+
+#star_box input{
+    width: 100px;
+}
+
+.navi_box{
+    position: absolute;
+    top:  0;
+    left: 0;
+    width: 150px;
+    height: 689px;
+    background-color: #0A5275;
+    border: #000000;
+    transition: all .5s;
+}
+.navi_box .navi-item{
+    width: 100%;
+    margin-bottom: 10px;
+    list-style: none;
+    border-bottom: 1px solid #666;
+}
+
+.navi_box #header{
+    display: flex;
+    align-items: center;
+    width: 100%;
+    height: 41px;
+    list-style: none;
+    border-bottom: 1px solid #666;
+}
+
+.navi_box .navi-item>a{
+    display: flex;
+    align-items: center;
+    height: 70px;
+    width: 100%;
+    color: #FFFFFF;
+    text-decoration: none;
+    transition: all .5s;
+}
+
+.navi_box .navi-item span, .navi_box #header h3{
+    width: 100%;
+    text-align: center;
+    color: #FFFFFF;
+}
+
+.navi-minor-box {
+    height: 0;
+    overflow: hidden;
+    background-color: #0A5275;
+    list-style: none;
+}
+
+.navi-minor-item {
+    width: 100%;
+    margin-bottom: 10px;
+    list-style: none;
+}
+
+.navi-minor-item>a{
+    display: flex;
+    align-items: center;
+    height: 50px;
+    width: 100%;
+    color: #FFFFFF;
+    text-decoration: none;
+    transition: all .5s;
+}
+
+#check:checked + #checklabel{
+    left: 0;
+}
+
+#check:checked ~ #navi_box{
+    left: -150px;
+}
+
+#checklabel i, #infolabel i {
+    font-size: 20px;
+    color: #FFFFFF;
+}
+
+#home_label i {
+    font-size: 20px;
+    color: #FFFFFF;
+}
+
+.navi_box:hover .navi-item:hover .navi-minor-box {
+    height: 300px;
+}
+
+.info{
+    display: none;
+    position: absolute;
+    background-color: #C3D7DF;
+    border-radius: 5px;
+    width: 280px;
+    height: 300px;
+}
+
+.info p{
+    width: 100%;
+    word-wrap:break-word;
+    text-align: center;
+}
+
+#right-box{
+    /*这个样式不写，右键弹框会一直显示在画布的左下角*/
+    display: none;
+    position: absolute;
+    // background: rgba(3,3,3,0.6);
+    border-radius: 5px;
+    left: -99999px;
+    top: -999999px;
+}
+.right-box .right-item {
+    cursor:pointer;
+  border-bottom: 1px solid #666;
+  color: rgba(3,3,3,0.6);
+}
+.right-box .title {
+  margin: 0;
+  padding: 7px;
+  background-color: #DDDDFF;
+}
+.right-minor-box{
+    height: 0;
+    overflow: hidden;
+    background-color: #B9B9FF;
+    margin: 0;
+    padding-left: 20px;
+    transition: 0.5s;
+    list-style: none;
+}
+.right-minor-box li{
+    padding-top: 5px;
+}
+.right-box:hover .right-item:hover .right-minor-box {
+    height: 120px;
+}

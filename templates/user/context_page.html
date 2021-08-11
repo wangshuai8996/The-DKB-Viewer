@@ -1,0 +1,646 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>
+        DKB INTERFACE
+    </title>
+    <link rel="stylesheet" href="https://at.alicdn.com/t/font_2669321_0wrc188vhioq.css">
+    <link rel="stylesheet" type="text/css" href="/static/css/context.css"/>
+    <script src="https://cdn.bootcdn.net/ajax/libs/echarts/5.1.2/echarts.min.js"></script>
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js" type="text/javascript"></script>
+</head>
+<body>
+    <div id="container">
+        <div id="main"></div>
+    </div>
+    <div id="navigator" class="navigator">
+        <input type="checkbox" id="check">
+        <label for="check" id="checklabel">
+            <i class="iconfont">&#xe601;</i>
+        </label>
+        <input type="checkbox" id="infobox">
+        <label for="infobox" id="infolabel">
+            <i class="iconfont">&#xe604;</i>
+        </label>
+        <input type="button" id="home_box">
+        <label for="home_box" id="home_label">
+            <i class="iconfont">&#xe674;</i>
+        </label>
+        <div id="star_box" class="star_box">
+            <div id="star_form" class="star_form">
+                state_name: <input type="text" name="save_name" id="save_name"/>
+                <input type="button" id="star_button" value="star"/>{% csrf_token %}
+            </div>
+        </div>
+        <div id="hide_box" class="hide_box">
+            <div id="hide_form" class="hide_form">
+                <select id="hide_nodes" name="hide_nodes">
+                    <option value="-1" selected="selected">hide_nodes</option>
+                </select>
+                <button id="hide_button" type="button">show</button>
+            </div>
+        </div>
+        <div id="navi_box" class="navi_box">
+            <div id="header">
+                <h3>DKB Home</h3>
+            </div>
+            <div id="userName" class="navi-item">
+                <a href="#"><span>11111</span></a>
+            </div>
+            <div id="logOut" class="navi-item">
+                <a href="{% url 'logout_user' %}"><span>LogOut</span></a>
+            </div>
+            <div id="searchPath" class="navi-item">
+                <a href="#"><span>Search Path</span></a>
+                <ul id="search_path" class="navi-minor-box">
+                </ul>
+            </div>
+            <div id="savedState" class="navi-item">
+                <a href="#"><span>savedStates</span></a>
+                <ul id="saved_state" class="navi-minor-box">
+                </ul>
+            </div>
+        </div>
+    </div>
+    <!--contextmenu-->
+    <div id="right-box" class="right-box">
+        <div id="hide" class="right-item">
+            <p class="title">hide</p>
+        </div>
+        <div id="expand" class="right-item">
+            <p class="title">expand</p>
+        </div>
+        <div id="collapse" class="right-item">
+            <p class="title">collapse</p>
+        </div>
+        <div id="mark" class="right-item">
+            <p class="title">mark</p>
+            <ul class="right-minor-box">
+                <li id="mark_none">none</li>
+                <li id="mark_red">red</li>
+                <li id="mark_yellow">yellow</li>
+                <li id="mark_green">green</li>
+            </ul>
+        </div>
+    </div>
+    <!-- info box -->
+    <div id="info" class="info">
+        <p id="info_content"></p>
+    </div>
+
+    <script type="text/javascript">
+        var colors = {"none":"#D2E9FF", "red":"#ff7575",
+                      "yellow":"#FFED97", "green":"#D3FF93"};
+        var line_label = {"dashed":"search_path", "solid":"instance_of", "dotted":"specialise"};
+        var hide_name = []; //{'id':id,'name':name}
+        var state_name = {{ state_name|safe }}
+        var userName = {{ userName|safe }};
+        var data = {{ data|safe }};
+        var link = {{ link|safe }};
+        console.log(userName);
+        console.log(data);
+        console.log(link);
+        var myChart = echarts.init(document.getElementById('main'));
+        console.log(data);
+        console.log(link);
+        var categories = [{name:"context", symbol:'roundRect'}, {name:"concept", symbol:'rect'},
+                          {name:"instance", symbol:'circle'}, {name:'attribute', symbol:'triangle'}];
+        var data_tmp;
+        option = {
+            title: {
+                text: 'ECharts of the DKB'
+            },
+            tooltip: {
+                formatter: function (x) {
+                    return String(x.data.des);
+                }
+            },
+            toolbox: {
+                show: true,
+                feature: {
+                    mark: {
+                        show: true
+                    },
+                    restore: {
+                        show: true
+                    },
+                    saveAsImage: {
+                        show: true
+                    }
+                }
+            },
+            legend: [{
+                // selectedMode: 'single',
+                data: categories.map(function (a) {
+                    return a.name;
+                 }),
+                show: true,
+                data:[{
+                    name: 'context',
+                    icon: 'roundRect',
+                    itemStyle: {
+                        color: '#D2E9FF'
+                    }
+                },{
+                    name: 'concept',
+                    icon: 'rect',
+                    itemStyle: {
+                        color: '#D2E9FF'
+                    }
+                },{
+                    name: 'instance',
+                    icon: 'circle',
+                    itemStyle: {
+                        color: '#D2E9FF'
+                    }
+                },{
+                    name: 'attribute',
+                    icon: 'triangle',
+                    itemStyle: {
+                        color: '#D2E9FF'
+                    }
+                }]
+
+            }],
+            series: [{
+                type: 'graph',
+                layout: 'force',
+                //symbolSize: data.symbolSize,
+                roam: true,
+                edgeSymbol: ['circle', 'arrow'],
+                edgeSymbolSize: [2, 10],
+                force: {
+                    repulsion: 500,
+                    edgeLength: [70, 100]
+                },
+                draggable: true,
+                lineStyle: {
+                    width: 2,
+                    color: '#4b565b',
+                },
+                label: {
+                    show: true,
+                    position:'inside'
+                },
+                categories: [{
+                    name: 'context',
+                    symbol: 'diamond'
+                }, {
+                    name: 'concept',
+                    symbol: 'rect'
+                }, {
+                    name: 'instance',
+                    symbol: 'circle'
+                }, {
+                    name: 'attribute',
+                    symbol: 'triangle'
+                }],
+                nodes: data.map(function (node) {
+                    return {
+                        id: node.id,
+                        name: node.name,
+                        des: node.des,
+                        category: node.category,
+                        symbolSize: node.symbolSize,
+                        store: node.store,
+                        context: node.context,
+                        info: node.info,
+                        search_path: node.search_path,
+                        attributes: node.attributes,
+                        itemStyle: {
+                            color: node.itemStyle.color
+                        }
+                    };
+                }),
+                links: link.map(function(line){
+                    return{
+                        target: line.target,
+                        source: line.source,
+                        des: line_label[line.lineStyle.type],
+                        lineStyle:{
+                            type: line.lineStyle.type
+                        }
+                    }
+                }),
+            }]
+        };
+
+        /**
+         * the menu of the hidden nodes, when clicking, get the list
+         */
+        function set_hide(){
+            if($("#hide_nodes").children("option").length>1){
+                $("#hide_nodes option").remove();
+                $("#hide_nodes").append("<option value='-1' selected='selected'>hide_nodes</option>");
+            }
+            for(var i=0;i<hide_name.length;i++){
+                var name = hide_name[i].name;
+                var option = "<option value='" + i + "'>" + name + "</option>";
+                $("#hide_nodes").append(option);
+            };
+        }
+        // to show a hidden node
+        $("#hide_button").click(function(){
+            var node_name = $("#hide_box").find("option:selected").text();
+            var node_val = $("#hide_box").find("option:selected").val();
+            if(node_val > -1){
+                showNode(hide_name[node_val].id);
+             }
+        });
+
+        /**
+         * save a state
+         */
+        $("#star_button").click(function(){
+            var save_name1 = $("#save_name").val();
+            if(save_name1 === ""){
+                alert("Please input something");
+                return;
+            }
+            if(save_name1.indexOf('&') !== -1){
+                alert("the name can not contain &");
+                return;
+            }
+            for(var i=0;i<state_name.length;i++){
+                if(state_name[i].state === save_name1){
+                    alert("the name exists");
+                    return;
+                }
+            }
+            console.log(myChart.getOption().series[0].nodes);
+            $.ajax({
+                type: "post",
+                url:"/user/save_state/",
+                'Content-Type':'application/json',
+                headers:{'X-CSRFToken': $('input[name=csrfmiddlewaretoken]').val()},
+                data: JSON.stringify({
+                    'username': userName,
+                    'state': save_name1,
+                    'page': 'context',
+                    'data': myChart.getOption().series[0].nodes,
+                    'link': myChart.getOption().series[0].links
+                }),
+                success: function(res){ //data是形参 代表返回数据
+                    if(res.code >  0) {
+                        state_name = res.state_name;
+                        alert("the state is saved successfully");
+                        fresh_states([{'state':save_name1, 'page':'context'}]);
+                    }
+            	    else{
+            	        alert("fail to save the state");
+                    }
+                }
+            });
+        })
+
+
+        /**
+         *  home button
+         */
+        $("#home_box").click(function(){
+            window.location.href="/user/gohome?user_name="+userName;
+        })
+        //与login_detail不同的地方，因为有导航栏，所以右键菜单出现的位置要调整
+        /**
+         * navigation bar
+         */
+        $("#check").click(function(){
+			if($("#check").is(':checked')){
+				$("#main").css({
+					'margin-left': 0
+				});
+			}else{
+			    $("#main").css({
+					'margin-left': '150px'
+				});
+            }
+		});
+        // show the context's prefix in the navigation bar
+        $("#header>h3").html(data[0].name);
+        // show the username in the navigation bar
+        $("#userName span").html(userName);
+        // show the search path of the context
+        for(var i=0; i< data[0].search_path.length; i++){
+            var context = data[0].search_path[i];
+            var id = "list_" + context;
+            var content = "<li id='"+id+"' class='navi-minor-item'><a href='#'><span>" + context +"</span></a></li>"
+            console.log(content);
+            $("#search_path").append(content);
+            //binding the context in search path, when clicking, users can enter the context page
+            $("#"+id).click(function(){
+                window.location.href="/user/context?context_name="+context;
+            })
+        }
+        $("#saved_state li").remove();
+        fresh_states(state_name);
+        bind_click();
+        //saved state in the navigation bar
+        function fresh_states(state_name1) {
+            console.log(state_name1)
+            for (var i = 0; i < state_name1.length; i++) {
+                var statei = state_name1[i].state;
+                var pagei = state_name1[i].page;
+                var id1 = "state_" + statei;
+                var content = "<li id='" + id1 + "' class='navi-minor-item'><a href='#'><span>" + statei + "</span>" +
+                    "<i class='iconfont' id='i_" + statei + "'>&#xe603;</i></a></li>";
+                $("#saved_state").append(content);
+            }
+        }
+        function find_state(state) {
+            for(var i=0;i<state_name.length;i++) {
+                if(state_name[i].state == state) {
+                    return state_name[i];
+                }
+            }
+            return null;
+        }
+        function bind_click() {
+            $("#saved_state span").each(function(index,element) {
+                var text = $(this).text();
+                var state_d = find_state(text);
+                console.log("text:"+text);
+                console.log(state_name);
+                if(state_d){
+                    $(this).click(function(){
+                        window.location.href="/user/go_state?username="+userName +
+                        "&state="+ state_d.state +"&page=" + state_d.page;
+                    })
+                }
+            })
+            $("#saved_state i").each(function(index, element){
+                var id = $(this).attr("id");
+                var state = id.slice(2);
+                $(this).click(function(){
+                    $.ajax({
+                        type: "get",
+                        url:"/user/del_state/",
+                        data: {
+                            'username': userName,
+                            'state': state,
+                        },
+                        success: function(res){ //data是形参 代表返回数据
+                            if(res.code >  0) {
+                                state_name = res.state_name;
+                                $("#state_"+state).remove();
+                                alert("the state has been deleted successfully");
+                            }
+                            else{
+                                console.log("nothing return !");
+                            }
+                        }
+                    });
+                })
+            })
+        }
+
+
+
+
+        /**
+         * info button
+         */
+        $("#info").html(data[0].info);
+        $("#infobox").click(function(){
+			if($("#infobox").is(':checked')){
+				$('#info').css({
+					'display': 'block',
+					'left': $("#infolabel").offset().left - 250,
+					'top' : $("#infolabel").offset().top  + 25
+				});
+			}
+			else{
+				$('#info').css({
+					'display': 'none'
+				});
+			}
+		});
+
+
+        /**
+		 * right click, and the context menu
+		 */
+		$("#main").bind("contextmenu", function () { return false; });//防止默认菜单弹出（查看图像,图像另存为等）
+
+        myChart.on("click", function(params){
+            data_tmp = params.data;
+            console.log(data_tmp);
+            if(data_tmp.category === 0){
+                window.location.href="/user/context?context_name="+data_tmp.id;
+            }
+            if(data_tmp.category === 1){
+                window.location.href="/user/concept?concept_name="+data_tmp.id+"&context_name="+data_tmp.context;
+            }
+        });
+
+        myChart.on("contextmenu", function(params){
+            data_tmp = params.data;
+            if($("#check").is(':checked')){
+				$('#right-box').css({
+                    'display': 'block',
+                    'left': params.event.offsetX + 15,
+                    'top' : params.event.offsetY + 15
+                });
+			}else{
+			    $('#right-box').css({
+                    'display': 'block',
+                    'left': params.event.offsetX + 165,
+                    'top' : params.event.offsetY + 55
+                });
+            }
+
+            $("#main>div:nth-child(2)").hide();
+	    });
+        /**
+         * when clicking the canvas, the contextmenu disappears
+         */
+        $('#main').click(function(){
+            hideMenu();
+         });
+
+        $("#hide").click(function(){
+			    console.log('hide_params:',data_tmp)
+				hide(data_tmp);
+				hideMenu();
+         });
+
+        $("#expand").click( function(){
+            console.log('expand_params:',data_tmp)
+            expand(data_tmp);
+            hideMenu();
+         });
+
+        $("#collapse").click(function(){
+            console.log('collapse_params:',data_tmp)
+            collapse(data_tmp);
+            hideMenu();
+         });
+
+        $("#mark_none").click(function(){
+            mark_color(data_tmp, colors.none);
+            hideMenu();
+         });
+
+        $("#mark_red").click(function(){
+            mark_color(data_tmp, colors.red);
+            hideMenu();
+         });
+
+        $("#mark_yellow").click(function(){
+            mark_color(data_tmp, colors.yellow);
+            hideMenu();
+         });
+
+        $("#mark_green").click(function(){
+            mark_color(data_tmp, colors.green);
+            hideMenu();
+         });
+
+        function mark_color(root, color){
+            var option = myChart.getOption();
+            var nodes = data;
+            var links = link;
+
+            var mark = [root];
+            while (mark.length > 0) {
+                var current = mark.pop();
+                dyeNode(current.id, color);
+                for (var i = 0; i < links.length; i++) {
+                    if (links[i].source === current.id) {
+                        var targetNode = findNodeById(links[i].target, nodes);
+                        if (targetNode.store > current.store) {
+                            mark.push(targetNode);
+                        }
+                    }
+                }
+            }
+         }
+
+        function dyeNode(id, color){
+            var option = myChart.getOption();
+		    for(var i=0, len=option.series[0].nodes.length; i<len; i++){
+			    //console.log(option.series[0].nodes[i].name + ":" + name);
+			    if(id === option.series[0].nodes[i].id){
+			        option.series[0].nodes[i].itemStyle.color = color;
+                }
+            }
+		    myChart.setOption(option);
+         }
+
+        function hideMenu(){
+            $('#right-box').css({
+                'display': 'none',
+                'left': '-9999px',
+                'top': '-9999px'
+            });
+         }
+
+		function hide(root){
+			var option = myChart.getOption();
+            var nodes = data;
+            var links = link;
+
+            var mark = [root];
+            while(mark.length > 0){
+            	var current = mark.pop();
+                hideNode(current.id);
+            	for(var i=0; i<links.length; i++){
+            		if(links[i].source === current.id){
+            			var targetNode = findNodeById(links[i].target, nodes);
+            			if(targetNode.store > current.store){
+            				mark.push(targetNode);
+            			}
+            		}
+            	}
+            }
+		 }
+
+		function findNodeById(id, nodes){
+            for(var i=0; i<nodes.length; i++){
+                if(nodes[i].id === id){
+                    return nodes[i];
+                }
+            }
+            return null;
+         }
+
+        function hideNode(id){
+		    var option = myChart.getOption();
+		    for(var i=0, len=option.series[0].nodes.length; i<len; i++){
+			    //console.log(option.series[0].nodes[i].name + ":" + name);
+			    if(id === option.series[0].nodes[i].id){
+			        option.series[0].nodes[i].category = -1;
+			        if(option.series[0].nodes[i].store < 3){
+			            hide_name.push({'id':id, 'name': option.series[0].nodes[i].name});
+			            set_hide();
+                    }
+                }
+            }
+		    myChart.setOption(option);
+         }
+
+        function showNode(id){
+		    var option = myChart.getOption();
+		    console.log(option.series[0].nodes[i]);
+		    for(var i=0, len=option.series[0].nodes.length; i<len; i++){
+			    //console.log(option.series[0].nodes[i].name + ":" + name);
+			    if(id === option.series[0].nodes[i].id){
+			        option.series[0].nodes[i].category = option.series[0].nodes[i].store;
+			        for(var idx=0; idx<hide_name.length; idx++){
+			            if(hide_name[idx].id === id){
+			                hide_name.splice(idx,1);
+			                break;
+                        }
+                    }
+			        set_hide();
+                }
+            }
+		    myChart.setOption(option);
+         }
+
+		function collapse(root) {
+            var option = myChart.getOption();
+            var nodes = data;
+            var links = link;
+
+            var mark = [root];
+            while(mark.length > 0){
+            	var current = mark.pop();
+            	if(current.id !== root.id){
+            	    hideNode(current.id);
+                }
+            	for(var i=0; i<links.length; i++){
+            		if(links[i].source === current.id){
+            			targetNode = findNodeById(links[i].target, nodes);
+            			if(targetNode.store > current.store){
+            				mark.push(targetNode);
+            				//console.log(mark);
+            			}
+            		}
+            	}
+            }
+         }
+
+        function expand(root) {
+            var nodes = data;
+            var links = link;
+           // var root = params.data;
+
+            //console.log(params);
+
+            for(var i=0; i<links.length; i++){
+                if(links[i].source == root.id){
+                    console.log("expand:source="+links[i].source+" root="+root.id);
+                    targetNode = findNodeById(links[i].target, nodes);
+                    console.log("targetNode.store:"+targetNode.store+"root.store:"+root.store);
+                    if(targetNode.store > root.store){
+                        showNode(targetNode.id);
+                    }
+                }
+            }
+         }
+
+        myChart.setOption(option);
+    </script>
+</body>
+</html>

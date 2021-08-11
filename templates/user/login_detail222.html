@@ -1,0 +1,328 @@
+<!DOCTYPE html>
+<html lang="en">
+{% load static %}
+<head>
+    <meta charset="UTF-8">
+    <title>
+        学生选课管理系统
+    </title>
+
+    <style>
+        *{padding: 0;margin: 0;}
+        .menu{
+            /*这个样式不写，右键弹框会一直显示在画布的左下角*/
+            position: absolute;
+            background: rgba(3,3,3,0.6);
+            border-radius: 5px;
+            left: -99999px;
+            top: -999999px;
+        }
+        {#.menu ul{list-style: none}#}
+        .menu div{
+            padding: 5px 10px;
+            color: #ffff;
+            border-bottom: 1px dashed #ffffff;
+            font-size: 14px;
+        }
+        {#.menu ul li:last-child{#}
+        {#    border-bottom: none;#}
+        {#}#}
+    </style>
+
+    <script src="https://cdn.bootcdn.net/ajax/libs/echarts/5.1.2/echarts.min.js"></script>
+{#    <script src="https://cdn.bootcss.com/echarts/4.1.0.rc2/echarts.js"></script>#}
+{#    <script src="https://echarts.baidu.com/dist/echarts.min.js" type="text/javascript"></script>#}
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js" type="text/javascript"></script>
+</head>
+<body>
+    <div class="container">
+        <div id="main" style="width: 1200px;height:700px;"></div>
+    </div>
+    <!--右键弹出菜单-->
+    <div id="rightMenu" class="menu" style="display: none;">
+		<div id="hide">hide</div>
+		<div id="expand">expand</div>
+		<div id="collapse">collapse</div>
+    </div>
+
+    <script type="text/javascript">
+        //返回登录时的session_id
+        {#var session_id = {{ session_id | safe }};#}
+        {#var p_session_id = document.getElementById("p_session_id");#}
+        {#p_session_id.innerHTML = "session_id: " + session_id;#}
+
+        var data = {{ data|safe }};
+        var link = {{ link|safe }};
+        var myChart = echarts.init(document.getElementById('main'));
+        console.log(data);
+        console.log(link);
+        var categories = [{name:"context", symbol:'roundRect'}, {name:"concept", symbol:'rect'},
+                          {name:"instance", symbol:'circle'}, {name:'attribute', symbol:'triangle'}];
+        var data_tmp;
+        option = {
+            // 图的标题
+            title: {
+                text: 'ECharts of the DKB'
+            },
+            // 提示框的配置
+            tooltip: {
+                formatter: function (x) {
+                    return x.data.des;
+                }
+            },
+            // 工具箱
+            toolbox: {
+                // 显示工具箱
+                show: true,
+                feature: {
+                    mark: {
+                        show: true
+                    },
+                    // 还原
+                    restore: {
+                        show: true
+                    },
+                    // 保存为图片
+                    saveAsImage: {
+                        show: true
+                    }
+                }
+            },
+            legend: [{
+                // selectedMode: 'single',
+                {#data: categories.map(function (a) {#}
+                {#    return a.name;#}
+                {# }) #}
+                show: true,
+                data:[{
+                    name: 'context',
+                    icon: 'roundRect',
+                    itemStyle: {
+                        color: '#87CEFA'
+                    }
+                },{
+                    name: 'concept',
+                    icon: 'rect',
+                    itemStyle: {
+                        color: '#87CEFA'
+                    }
+                },{
+                    name: 'instance',
+                    icon: 'circle',
+                    itemStyle: {
+                        color: '#87CEFA'
+                    }
+                },{
+                    name: 'attribute',
+                    icon: 'triangle',
+                    itemStyle: {
+                        color: '#87CEFA'
+                    }
+                }]
+
+            }],
+            series: [{
+                type: 'graph',// 类型:关系图
+                layout: 'force', //图的布局，类型为力导图
+                //symbolSize: data.symbolSize, // 调整节点的大小
+                roam: true, // 是否开启鼠标缩放和平移漫游。默认不开启。如果只想要开启缩放或者平移,可以设置成 'scale' 或者 'move'。设置成 true 为都开启
+                edgeSymbol: ['circle', 'arrow'],
+                edgeSymbolSize: [2, 10],
+                edgeLabel: {
+                    textStyle: {
+                        fontSize: 20
+                    }
+                },
+                force: {
+                    repulsion: 500,
+                    edgeLength: [70, 100]
+                },
+                draggable: true,
+                lineStyle: {
+                    width: 2,
+                    color: '#4b565b',
+                },
+                edgeLabel: {
+                    show: false,
+                    formatter: function (x) {
+                        return x.data.name;
+                    }
+                },
+                label: {
+                    show: true,
+                    position:'inside'
+                },
+                // 数据
+                categories: [{
+                    name: 'context',
+                    symbol: 'roundRect'
+                }, {
+                    name: 'concept',
+                    symbol: 'rect'
+                }, {
+                    name: 'instance',
+                    symbol: 'circle'
+                }, {
+                    name: 'attribute',
+                    symbol: 'triangle'
+                }],
+                nodes: data.map(function (node) {
+                    return {
+                        name: node.name,
+                        des: node.des,
+                        category: node.category,
+                        symbolSize: node.symbolSize,
+                        itemStyle: {
+                            color: node.color
+                        }
+                    };
+                }),
+                links: link
+            }]
+        };
+
+        /**
+		 * 鼠标右键，弹出右键操作菜单
+		 */
+		$("#main").bind("contextmenu", function () { return false; });//防止默认菜单弹出（查看图像,图像另存为等）
+	    myChart.on("contextmenu", function(params){
+            data_tmp = params.data;
+            $('#rightMenu').css({
+                'display': 'block',
+                'left': params.event.offsetX + 15,
+                'top' : params.event.offsetY + 15
+            });
+
+            //todo 右键菜单刚弹出时，隐藏鼠标悬停菜单
+            $("#main>div:nth-child(2)").hide();
+	    });
+        /**
+         * 点击画布的时候隐藏右键菜单
+         */
+        $('.container').click(function(){
+            hideMenu();
+        });
+
+        $("#hide").click(function(){
+			    console.log('hide_params:',data_tmp)
+				hide(data_tmp);
+				hideMenu();
+        });
+
+        $("#expand").click( function(){
+            console.log('expand_params:',data_tmp)
+            expand(data_tmp);
+            hideMenu();
+        });
+
+        $("#collapse").click(function(){
+            console.log('collapse_params:',data_tmp)
+            collapse(data_tmp);
+            hideMenu();
+        });
+
+        function hideMenu(){
+            $('#rightMenu').css({
+                'display': 'none',
+                'left': '-9999px',
+                'top': '-9999px'
+            });
+        }
+
+		function hide(root){
+			var option = myChart.getOption();
+            var nodes = data;
+            var links = link;
+
+            var mark = [root];
+            while(mark.length > 0){
+            	var current = mark.pop();
+                hideNode(current.name);
+            	for(var i=0; i<links.length; i++){
+            		if(links[i].source === current.name){
+            			targetNode = findNodeById(links[i].target, nodes);
+            			if(targetNode.store > current.store){
+            				mark.push(targetNode);
+            			}
+            		}
+            	}
+            }
+		}
+
+		function findNodeById(name, nodes){
+            for(var i=0; i<nodes.length; i++){
+                if(nodes[i].name === name){
+                    return nodes[i];
+                }
+            }
+            return null;
+        }
+
+        function hideNode(name){
+		    var option = myChart.getOption();
+		    for(var i=0, len=option.series[0].nodes.length; i<len; i++){
+			    //console.log(option.series[0].nodes[i].name + ":" + name);
+			    if(name === option.series[0].nodes[i].name){
+			        option.series[0].nodes[i].category = -1;
+                }
+            }
+		    myChart.setOption(option);
+        }
+
+        function showNode(name){
+		    var option = myChart.getOption();
+		    for(var i=0, len=option.series[0].nodes.length; i<len; i++){
+			    //console.log(option.series[0].nodes[i].name + ":" + name);
+			    if(name === option.series[0].nodes[i].name){
+			        option.series[0].nodes[i].category = option.series[0].nodes[i].store;
+                }
+            }
+		    myChart.setOption(option);
+        }
+
+		function collapse(root) {
+            var option = myChart.getOption();
+            var nodes = data;
+            var links = link;
+
+            var mark = [root];
+            while(mark.length > 0){
+            	var current = mark.pop();
+            	if(current.name !== root.name){
+            	    hideNode(current.name);
+                }
+            	for(var i=0; i<links.length; i++){
+            		if(links[i].source === current.name){
+            			targetNode = findNodeById(links[i].target, nodes);
+            			if(targetNode.store > current.store){
+            				mark.push(targetNode);
+            				//console.log(mark);
+            			}
+            		}
+            	}
+            }
+        }
+
+        function expand(root) {
+            var nodes = data;
+            var links = link;
+           // var root = params.data;
+
+            //console.log(params);
+
+            for(var i=0; i<links.length; i++){
+                if(links[i].source == root.name){
+                    //console.log("expand:source="+links[i].source+" root="+root.name);
+                    //console.log(link[i]);
+                    targetNode = findNodeById(links[i].target, nodes);
+                    if(targetNode.store > root.store){
+                        showNode(targetNode.name);
+                    }
+                }
+            }
+        }
+
+        myChart.setOption(option);
+    </script>
+</body>
+</html>

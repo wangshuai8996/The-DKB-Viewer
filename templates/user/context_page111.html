@@ -1,0 +1,469 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>
+        DKB INTERFACE
+    </title>
+
+    <style>
+        *{padding: 0;margin: 0;}
+        .infobox{
+            position: absolute;
+            width: 50px;
+            height: 20px;
+            top: 30px;
+            left: 1050px;
+        }
+        #main{
+            position: absolute;
+            width: 1000px;
+            height: 600px;
+            top: 30px;
+            left:10px;
+        }
+        .info{
+            display: none;
+            position: absolute;
+            background-color: #C3D7DF;
+            border-radius: 5px;
+            width: 280px;
+            height: 300px;
+        }
+        #right-box{
+            /*这个样式不写，右键弹框会一直显示在画布的左下角*/
+            display: none;
+            position: absolute;
+            // background: rgba(3,3,3,0.6);
+            border-radius: 5px;
+            left: -99999px;
+            top: -999999px;
+        }
+        .right-box .right-item {
+          border-bottom: 1px solid #666;
+          color: rgba(3,3,3,0.6);
+        }
+        .right-box .title {
+          margin: 0;
+          padding: 7px;
+          background-color: #DDDDFF;
+        }
+        .right-minor-box{
+            height: 0;
+            overflow: hidden;
+            background-color: #B9B9FF;
+            margin: 0;
+            padding-left: 20px;
+            transition: 0.5s;
+            list-style: none;
+        }
+        .right-minor-box li{
+            padding-top: 5px;
+        }
+        .right-box:hover .right-item:hover .right-minor-box {
+            height: 120px;
+        }
+    </style>
+
+    <script src="https://cdn.bootcdn.net/ajax/libs/echarts/5.1.2/echarts.min.js"></script>
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js" type="text/javascript"></script>
+</head>
+<body>
+    <div class="container">
+        <!-- 显示信息的按钮 -->
+        <div class="infobox">
+            <button id="info_button" type="button">info</button>
+        </div>
+        <div id="main"></div>
+    </div>
+    <!--右键弹出菜单-->
+    <div id="right-box" class="right-box">
+        <div id="hide" class="right-item">
+            <p class="title">hide</p>
+        </div>
+        <div id="expand" class="right-item">
+            <p class="title">expand</p>
+        </div>
+        <div id="collapse" class="right-item">
+            <p class="title">collapse</p>
+        </div>
+        <div id="mark" class="right-item">
+            <p class="title">mark</p>
+            <ul class="right-minor-box">
+                <li id="mark_none">none</li>
+                <li id="mark_red">red</li>
+                <li id="mark_yellow">yellow</li>
+                <li id="mark_green">green</li>
+            </ul>
+        </div>
+    </div>
+    <!-- 显示基本信息的框 -->
+    <div id="info" class="info">
+        <p id="info_content"></p>
+    </div>
+
+    <script type="text/javascript">
+        //返回登录时的session_id
+        {#var session_id = {{ session_id | safe }};#}
+        {#var p_session_id = document.getElementById("p_session_id");#}
+        {#p_session_id.innerHTML = "session_id: " + session_id;#}
+
+        var colors = {"none":"#D2E9FF", "red":"#ff7575",
+                      "yellow":"#FFED97", "green":"#D3FF93"};
+        var data = {{ data|safe }};
+        var link = {{ link|safe }};
+        console.log(data)
+        console.log(link)
+        var myChart = echarts.init(document.getElementById('main'));
+        console.log(data);
+        console.log(link);
+        var categories = [{name:"context", symbol:'roundRect'}, {name:"concept", symbol:'rect'},
+                          {name:"instance", symbol:'circle'}, {name:'attribute', symbol:'triangle'}];
+        var data_tmp;
+        option = {
+            // 图的标题
+            title: {
+                text: 'ECharts of the DKB'
+            },
+            // 提示框的配置
+            tooltip: {
+                formatter: function (x) {
+                    return String(x.data.des);
+                }
+            },
+            // 工具箱
+            toolbox: {
+                // 显示工具箱
+                show: true,
+                feature: {
+                    mark: {
+                        show: true
+                    },
+                    // 还原
+                    restore: {
+                        show: true
+                    },
+                    // 保存为图片
+                    saveAsImage: {
+                        show: true
+                    }
+                }
+            },
+            legend: [{
+                // selectedMode: 'single',
+                {#data: categories.map(function (a) {#}
+                {#    return a.name;#}
+                {# }) #}
+                show: true,
+                data:[{
+                    name: 'context',
+                    icon: 'roundRect',
+                    itemStyle: {
+                        color: '#D2E9FF'
+                    }
+                },{
+                    name: 'concept',
+                    icon: 'rect',
+                    itemStyle: {
+                        color: '#D2E9FF'
+                    }
+                },{
+                    name: 'instance',
+                    icon: 'circle',
+                    itemStyle: {
+                        color: '#D2E9FF'
+                    }
+                },{
+                    name: 'attribute',
+                    icon: 'triangle',
+                    itemStyle: {
+                        color: '#D2E9FF'
+                    }
+                }]
+
+            }],
+            series: [{
+                type: 'graph',// 类型:关系图
+                layout: 'force', //图的布局，类型为力导图
+                //symbolSize: data.symbolSize, // 调整节点的大小
+                roam: true, // 是否开启鼠标缩放和平移漫游。默认不开启。如果只想要开启缩放或者平移,可以设置成 'scale' 或者 'move'。设置成 true 为都开启
+                edgeSymbol: ['circle', 'arrow'],
+                edgeSymbolSize: [2, 10],
+                edgeLabel: {
+                    textStyle: {
+                        fontSize: 20
+                    }
+                },
+                force: {
+                    repulsion: 500,
+                    edgeLength: [70, 100]
+                },
+                draggable: true,
+                lineStyle: {
+                    width: 2,
+                    color: '#4b565b',
+                },
+                edgeLabel: {
+                    show: false,
+                    formatter: function (x) {
+                        return x.data.name;
+                    }
+                },
+                label: {
+                    show: true,
+                    position:'inside'
+                },
+                // 数据
+                categories: [{
+                    name: 'context',
+                    symbol: 'roundRect'
+                }, {
+                    name: 'concept',
+                    symbol: 'rect'
+                }, {
+                    name: 'instance',
+                    symbol: 'circle'
+                }, {
+                    name: 'attribute',
+                    symbol: 'triangle'
+                }],
+                nodes: data.map(function (node) {
+                    return {
+                        id: node.id,
+                        name: node.name,
+                        des: node.des,
+                        category: node.category,
+                        symbolSize: node.symbolSize,
+                        store: node.store,
+                        itemStyle: {
+                            color: node.color
+                        }
+                    };
+                }),
+                links: link
+            }]
+        };
+
+        /**
+         * info按钮设置
+         */
+        $("#info").html(data[0].info);
+        $("#info_button").click(function(){
+            if(window.getComputedStyle(info).display === 'none'){
+                $('#info').css({
+                    'display': 'block',
+                    'left': $("#info_button").offset().left,
+                    'top' : $("#info_button").offset().top  + 25
+                });
+            }
+            else{
+                $('#info').css({
+                    'display': 'none'
+                });
+            }
+        });
+
+
+        /**
+		 * 鼠标右键，弹出右键操作菜单
+		 */
+		$("#main").bind("contextmenu", function () { return false; });//防止默认菜单弹出（查看图像,图像另存为等）
+
+        myChart.on("click", function(params){
+            data_tmp = params.data;
+            window.location.href="/user/context?context_name="+data_tmp.id;
+        });
+
+        myChart.on("contextmenu", function(params){
+            data_tmp = params.data;
+            $('#right-box').css({
+                'display': 'block',
+                'left': params.event.offsetX + 15,
+                'top' : params.event.offsetY + 15
+            });
+
+            //todo 右键菜单刚弹出时，隐藏鼠标悬停菜单
+            $("#main>div:nth-child(2)").hide();
+	    });
+        /**
+         * 点击画布的时候隐藏右键菜单
+         */
+        $('.container').click(function(){
+            hideMenu();
+        });
+
+        $("#hide").click(function(){
+			    console.log('hide_params:',data_tmp)
+				hide(data_tmp);
+				hideMenu();
+        });
+
+        $("#expand").click( function(){
+            console.log('expand_params:',data_tmp)
+            expand(data_tmp);
+            hideMenu();
+        });
+
+        $("#collapse").click(function(){
+            console.log('collapse_params:',data_tmp)
+            collapse(data_tmp);
+            hideMenu();
+        });
+
+        $("#mark_none").click(function(){
+            mark_color(data_tmp, colors.none);
+            hideMenu();
+        });
+
+        $("#mark_red").click(function(){
+            mark_color(data_tmp, colors.red);
+            hideMenu();
+        });
+
+        $("#mark_yellow").click(function(){
+            mark_color(data_tmp, colors.yellow);
+            hideMenu();
+        });
+
+        $("#mark_green").click(function(){
+            mark_color(data_tmp, colors.green);
+            hideMenu();
+        });
+
+        function mark_color(root, color){
+            var option = myChart.getOption();
+            var nodes = data;
+            var links = link;
+
+            var mark = [root];
+            while (mark.length > 0) {
+                var current = mark.pop();
+                dyeNode(current.id, color);
+                for (var i = 0; i < links.length; i++) {
+                    if (links[i].source === current.id) {
+                        var targetNode = findNodeById(links[i].target, nodes);
+                        if (targetNode.store > current.store) {
+                            mark.push(targetNode);
+                        }
+                    }
+                }
+            }
+        }
+
+        function dyeNode(id, color){
+            var option = myChart.getOption();
+		    for(var i=0, len=option.series[0].nodes.length; i<len; i++){
+			    //console.log(option.series[0].nodes[i].name + ":" + name);
+			    if(id === option.series[0].nodes[i].id){
+			        option.series[0].nodes[i].itemStyle.color = color;
+                }
+            }
+		    myChart.setOption(option);
+        }
+
+        function hideMenu(){
+            $('#right-box').css({
+                'display': 'none',
+                'left': '-9999px',
+                'top': '-9999px'
+            });
+        }
+
+		function hide(root){
+			var option = myChart.getOption();
+            var nodes = data;
+            var links = link;
+
+            var mark = [root];
+            while(mark.length > 0){
+            	var current = mark.pop();
+                hideNode(current.id);
+            	for(var i=0; i<links.length; i++){
+            		if(links[i].source === current.id){
+            			targetNode = findNodeById(links[i].target, nodes);
+            			if(targetNode.store > current.store){
+            				mark.push(targetNode);
+            			}
+            		}
+            	}
+            }
+		}
+
+		function findNodeById(id, nodes){
+            for(var i=0; i<nodes.length; i++){
+                if(nodes[i].id === id){
+                    return nodes[i];
+                }
+            }
+            return null;
+        }
+
+        function hideNode(id){
+		    var option = myChart.getOption();
+		    for(var i=0, len=option.series[0].nodes.length; i<len; i++){
+			    //console.log(option.series[0].nodes[i].name + ":" + name);
+			    if(id === option.series[0].nodes[i].id){
+			        option.series[0].nodes[i].category = -1;
+                }
+            }
+		    myChart.setOption(option);
+        }
+
+        function showNode(id){
+		    var option = myChart.getOption();
+		    console.log(option.series[0].nodes[i]);
+		    for(var i=0, len=option.series[0].nodes.length; i<len; i++){
+			    //console.log(option.series[0].nodes[i].name + ":" + name);
+			    if(id === option.series[0].nodes[i].id){
+			        option.series[0].nodes[i].category = option.series[0].nodes[i].store;
+                }
+            }
+		    myChart.setOption(option);
+        }
+
+		function collapse(root) {
+            var option = myChart.getOption();
+            var nodes = data;
+            var links = link;
+
+            var mark = [root];
+            while(mark.length > 0){
+            	var current = mark.pop();
+            	if(current.id !== root.id){
+            	    hideNode(current.id);
+                }
+            	for(var i=0; i<links.length; i++){
+            		if(links[i].source === current.id){
+            			targetNode = findNodeById(links[i].target, nodes);
+            			if(targetNode.store > current.store){
+            				mark.push(targetNode);
+            				//console.log(mark);
+            			}
+            		}
+            	}
+            }
+        }
+
+        function expand(root) {
+            var nodes = data;
+            var links = link;
+           // var root = params.data;
+
+            //console.log(params);
+
+            for(var i=0; i<links.length; i++){
+                if(links[i].source == root.id){
+                    console.log("expand:source="+links[i].source+" root="+root.id);
+                    targetNode = findNodeById(links[i].target, nodes);
+                    console.log("targetNode.store:"+targetNode.store+"root.store:"+root.store);
+                    if(targetNode.store > root.store){
+                        showNode(targetNode.id);
+                    }
+                }
+            }
+        }
+
+        myChart.setOption(option);
+    </script>
+</body>
+</html>
